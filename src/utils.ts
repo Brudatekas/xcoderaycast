@@ -105,3 +105,44 @@ export async function runCommand(command: string, cwd: string): Promise<{ stdout
   // We use a high maxBuffer because xcodebuild output can be extremely long
   return execAsync(command, { cwd, maxBuffer: 1024 * 1024 * 20 });
 }
+
+/**
+ * Fetches the available schemes for a given Xcode project or workspace directory.
+ * @param dir The directory containing the Xcode project/workspace.
+ * @returns Array of scheme names as strings.
+ */
+export async function getSchemes(dir: string): Promise<string[]> {
+  try {
+    const { stdout } = await runCommand("xcodebuild -list -json", dir);
+    const parsed = JSON.parse(stdout);
+    if (parsed?.project?.schemes) {
+      return parsed.project.schemes;
+    } else if (parsed?.workspace?.schemes) {
+      return parsed.workspace.schemes;
+    }
+  } catch {
+    // Return empty array if error
+  }
+  return [];
+}
+
+/**
+ * Retrieves the path to the built .app binary for a given scheme and configuration.
+ * @param dir The directory containing the Xcode project/workspace.
+ * @param scheme The scheme to interrogate.
+ * @param configuration Optional build configuration (e.g. Debug, Release).
+ * @returns The absolute path to the app or null if not found.
+ */
+export async function getBuiltAppPath(dir: string, scheme: string, configuration?: string): Promise<string | null> {
+  const configFlag = configuration ? `-configuration ${configuration}` : "";
+  const cmd = `xcodebuild -showBuildSettings -scheme "${scheme}" ${configFlag}`;
+  const { stdout } = await runCommand(cmd, dir);
+
+  const codeSigningMatch = stdout.match(/CODESIGNING_FOLDER_PATH = (.*)/);
+  if (codeSigningMatch) return codeSigningMatch[1].trim();
+
+  const executableFolderMatch = stdout.match(/EXECUTABLE_FOLDER_PATH = (.*)/);
+  if (executableFolderMatch) return executableFolderMatch[1].trim();
+
+  return null;
+}

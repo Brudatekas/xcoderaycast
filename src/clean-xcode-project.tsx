@@ -8,24 +8,24 @@ export default function Command() {
     return await findXcodeProjects();
   }, []);
 
-  async function buildProject(project: XcodeProject, scheme: string) {
+  async function cleanProject(project: XcodeProject, scheme: string) {
     let toast: Toast | undefined;
     try {
       toast = await showToast({
         style: Toast.Style.Animated,
-        title: "Building Xcode Project...",
+        title: "Cleaning Xcode Project...",
         message: `${project.name} (${scheme})`,
       });
 
-      await runCommand(`xcodebuild build -scheme "${scheme}"`, project.dir);
+      await runCommand(`xcodebuild clean -scheme "${scheme}"`, project.dir);
 
       toast.style = Toast.Style.Success;
-      toast.title = "Build Succeeded";
-      toast.message = `Built ${project.name} (${scheme})`;
+      toast.title = "Clean Succeeded";
+      toast.message = `Cleaned ${project.name} (${scheme})`;
     } catch (error) {
       if (toast) {
         toast.style = Toast.Style.Failure;
-        toast.title = "Build Failed";
+        toast.title = "Clean Failed";
         if (error instanceof Error) {
           toast.message = error.message;
         }
@@ -40,24 +40,24 @@ export default function Command() {
   }
 
   return (
-    <List isLoading={isLoading} searchBarPlaceholder="Search Xcode Projects">
+    <List isLoading={isLoading} searchBarPlaceholder="Search Xcode Projects to Clean">
       {data?.map((project) => (
         <List.Item
           key={project.id}
           title={project.name}
           subtitle={project.dir}
-          icon={Icon.Hammer}
+          icon={Icon.Trash}
           actions={
             <ActionPanel>
               <Action.Push
-                title="Select Scheme to Build"
-                icon={Icon.Hammer}
+                title="Select Scheme to Clean"
+                icon={Icon.Trash}
                 target={
                   <SchemeList
                     project={project}
-                    actionTitle="Build Scheme"
-                    actionIcon={Icon.Hammer}
-                    onSelect={(scheme) => buildProject(project, scheme)}
+                    actionTitle="Clean Scheme"
+                    actionIcon={Icon.Trash}
+                    onSelect={(scheme) => cleanProject(project, scheme)}
                   />
                 }
               />

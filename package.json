@@ -24,6 +24,18 @@
       "mode": "view"
     },
     {
+      "name": "install-xcode-project",
+      "title": "Install Xcode Scheme to /Applications",
+      "description": "Builds the release scheme and copies the resulting app to /Applications, replacing any existing build.",
+      "mode": "view"
+    },
+    {
+      "name": "clean-xcode-project",
+      "title": "Clean Xcode Project",
+      "description": "Cleans the selected Xcode project scheme.",
+      "mode": "view"
+    },
+    {
       "name": "manage-directories",
       "title": "Manage Search Directories",
       "description": "Configure directories to search for Xcode projects.",

@@ -1,6 +1,7 @@
 import { List, ActionPanel, Action, showToast, Toast, open, Icon } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
-import { findXcodeProjects, runCommand, XcodeProject } from "./utils";
+import { findXcodeProjects, runCommand, getBuiltAppPath, XcodeProject } from "./utils";
+import { SchemeList } from "./components/SchemeList";
 import path from "path";
 
 export default function Command() {
@@ -8,29 +9,26 @@ export default function Command() {
     return await findXcodeProjects();
   }, []);
 
-  async function runProject(project: XcodeProject) {
+  async function runProject(project: XcodeProject, scheme: string) {
     let toast: Toast | undefined;
 
     try {
       toast = await showToast({
         style: Toast.Style.Animated,
         title: "Building Xcode Project...",
-        message: project.name,
+        message: `${project.name} (${scheme})`,
       });
 
       // Ensure the build is up-to-date
-      await runCommand("xcodebuild build", project.dir);
+      await runCommand(`xcodebuild build -scheme "${scheme}"`, project.dir);
 
       toast.title = "Gathering build settings...";
       toast.message = "Locating executable app...";
 
       // Attempt to find the built product
-      const { stdout } = await runCommand("xcodebuild -showBuildSettings", project.dir);
-      const match = stdout.match(/CODESIGNING_FOLDER_PATH = (.*)/) || stdout.match(/EXECUTABLE_FOLDER_PATH = (.*)/);
+      const appPath = await getBuiltAppPath(project.dir, scheme);
 
-      if (match) {
-        const appPath = match[1].trim();
-
+      if (appPath) {
         toast.title = "Running Application...";
         toast.message = path.basename(appPath);
 
@@ -70,7 +68,18 @@ export default function Command() {
           icon={Icon.Play}
           actions={
             <ActionPanel>
-              <Action title="Run Project" onAction={() => runProject(project)} />
+              <Action.Push
+                title="Select Scheme to Run"
+                icon={Icon.Play}
+                target={
+                  <SchemeList
+                    project={project}
+                    actionTitle="Run Scheme"
+                    actionIcon={Icon.Play}
+                    onSelect={(scheme) => runProject(project, scheme)}
+                  />
+                }
+              />
             </ActionPanel>
           }
         />
